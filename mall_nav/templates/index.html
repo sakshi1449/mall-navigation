@@ -1,0 +1,781 @@
+{% load static %}
+
+<link rel="stylesheet" href="{% static 'style.css' %}">
+<script src="{% static 'toggle.js' %}"></script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Orion Mall Navigator</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      margin: 0;
+      background: #f5f5f5;
+    }
+
+    .app {
+      display: flex;
+      height: 100vh;
+    }
+
+    .sidebar {
+      width: 300px;
+      background: #fff;
+      padding: 20px;
+      border-right: 1px solid #ddd;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .branding .logo {
+      width: 40px;
+      height: 40px;
+      background: #1e90ff;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+
+    .branding h2 {
+      margin: 0;
+      font-size: 20px;
+      color: #333;
+    }
+
+    .branding p {
+      margin: 5px 0 20px;
+      color: #777;
+    }
+
+    .search {
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      margin-bottom: 15px;
+      width: 100%;
+      font-size: 14px;
+    }
+
+    .location-status {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+
+    .green { background: green; }
+    .red { background: red; }
+    .blue { background: blue; }
+    .orange { background: orange; }
+    .purple { background: purple; }
+    .cyan { background: cyan; }
+
+    nav.tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    nav.tabs button {
+      flex: 1;
+      padding: 10px;
+      background: #f0f0f0;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      color: #555;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    nav.tabs button.active {
+      background: #eaf3ff;
+      color: #000;
+      border-bottom: 3px solid #1e90ff;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .store-list .store,
+    .category,
+    .service {
+      display: flex;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      background: #f9f9f9;
+      margin-bottom: 10px;
+      transition: transform 0.2s ease, background 0.2s ease;
+      cursor: pointer;
+    }
+
+    .store:hover,
+    .category:hover,
+    .service:hover {
+      background: #e6f3ff;
+      transform: scale(1.02);
+    }
+
+    .color-box {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+    }
+
+    .color-box.red { background: #e74c3c; }
+    .color-box.green { background: #2ecc71; }
+    .color-box.black { background: #333; }
+    .color-box.blue { background: #3498db; }
+
+    .badge {
+      display: inline-block;
+      background: #1abc9c;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      margin-top: 2px;
+    }
+
+    .category-grid,
+    .service-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .service-list { grid-template-columns: 1fr; }
+
+    .category h3,
+    .service h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .category small,
+    .service small {
+      color: #777;
+    }
+
+    .map-area {
+      flex: 1;
+      padding: 20px;
+      position: relative;
+      background: #fcfcfc;
+    }
+
+    .top-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .map-search {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .grid-map {
+      position: relative;
+      width: 100%;
+      height: 500px;
+      background: #f1f1f1;
+      border: 2px dashed #dcdcdc;
+      border-radius: 10px;
+    }
+
+    .marker {
+      position: absolute;
+      padding: 8px 10px;
+      border-radius: 6px;
+      color: white;
+      font-size: 13px;
+      text-align: center;
+      transform: translate(-50%, -50%);
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+
+    .marker:hover {
+      transform: translate(-50%, -50%) scale(1.1);
+    }
+
+    .marker.red { background: #e74c3c; }
+    .marker.green { background: #2ecc71; }
+    .marker.black { background: #333; }
+    .marker.blue { background: #3498db; }
+
+    .legend {
+      margin-top: 20px;
+      padding: 10px;
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 0 4px rgba(0,0,0,0.1);
+      font-size: 14px;
+    }
+
+    .legend span {
+      margin-right: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="branding">
+        <div class="logo"></div>
+        <h2>Orion Mall</h2>
+        <p>Interactive Navigator</p>
+      </div>
+
+      <div id="aiChatBoard" style="background:#f4f8ff; border-radius:12px; margin-bottom:18px; padding:16px; box-shadow:0 2px 8px rgba(30,144,255,0.08);">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+          <div style="width:36px; height:36px; background:#3498db; border-radius:8px;"></div>
+          <div>
+            <strong style="font-size:18px; color:#1976d2;">Mall Assistant AI</strong><br>
+            <span style="font-size:13px; color:#1976d2;">Online • Ready to help</span>
+          </div>
+        </div>
+        <div id="aiChatMessages" style="margin-bottom:10px;">
+          <div style="background:#fff; border-radius:10px; padding:12px 16px; margin-bottom:6px; color:#222; font-size:16px;">Hello! I'm your Orion Mall assistant. I can help you find stores, navigate to locations, and answer questions about the mall. What can I help you with today?</div>
+        </div>
+        <form id="aiChatForm" style="display:flex; gap:8px;">
+          <input id="aiChatInput" type="text" placeholder="Ask me anything about the mall..." style="flex:1; border-radius:8px; border:1px solid #ccc; padding:8px; font-size:15px;">
+          <button type="submit" style="background:#1976d2; color:#fff; border:none; border-radius:8px; padding:0 16px; font-size:16px; cursor:pointer;">Send</button>
+        </form>
+        <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="aiQuickBtn" style="background:#fff; border:1px solid #ddd; border-radius:8px; padding:6px 14px; font-size:15px; cursor:pointer;">Find Restroom</button>
+          <button type="button" class="aiQuickBtn" style="background:#fff; border:1px solid #ddd; border-radius:8px; padding:6px 14px; font-size:15px; cursor:pointer;">Food Court</button>
+          <button type="button" class="aiQuickBtn" style="background:#fff; border:1px solid #ddd; border-radius:8px; padding:6px 14px; font-size:15px; cursor:pointer;">Parking Info</button>
+        </div>
+      </div>
+
+      <input type="text" placeholder="Search stores, products, or brands" class="search" id="sidebarSearch">
+
+      <div class="location-status">
+        <span class="dot green"></span>
+        <div>
+          <strong>Near Food Court - Level 2</strong><br>
+          <small>Last updated: Just now</small>
+        </div>
+      </div>
+
+      <nav class="tabs">
+        <button onclick="showTab('stores')" class="active">Stores</button>
+        <button onclick="showTab('categories')">Categories</button>
+        <button onclick="showTab('services')">Services</button>
+      </nav>
+
+      <div id="stores" class="tab-content active store-list">
+        <!-- Store list will be rendered dynamically -->
+      </div>
+      <div id="searchPopup" style="display:none; position:absolute; top:70px; left:20px; z-index:1000; width:90%; max-width:500px;"></div>
+      <!-- Store Modal -->
+      <div id="storeModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.18); z-index:2000; align-items:center; justify-content:center;">
+        <div id="storeModalContent" style="background:#fff; border-radius:18px; box-shadow:0 2px 24px rgba(0,0,0,0.18); padding:32px 28px; min-width:340px; max-width:90vw; position:relative;">
+          <!-- Modal content will be injected dynamically -->
+        </div>
+      </div>
+      <!-- Navigation Popup -->
+      <div id="navigationPopup" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(30,144,255,0.10); z-index:2100; align-items:center; justify-content:center;">
+        <div id="navigationPopupContent" style="background:#fff; border-radius:16px; box-shadow:0 2px 24px rgba(30,144,255,0.18); padding:28px 24px; min-width:320px; max-width:90vw; position:relative;">
+          <!-- Navigation popup content will be injected dynamically -->
+        </div>
+      </div>
+
+      <div id="categories" class="tab-content">
+        <div class="category-grid">
+          <div class="category"><h3>Fashion</h3><small>2 stores</small></div>
+          <div class="category"><h3>Food</h3><small>1 store</small></div>
+          <div class="category"><h3>Electronics</h3><small>1 store</small></div>
+          <div class="category"><h3>Beauty</h3><small>1 store</small></div>
+          <div class="category"><h3>Entertainment</h3><small>1 store</small></div>
+          <div class="category"><h3>Sports</h3><small>1 store</small></div>
+          <div class="category"><h3>Facilities</h3><small>5 stores</small></div>
+        </div>
+      </div>
+
+      <div id="services" class="tab-content">
+        <div class="service-list">
+          <div class="service"><h3>Restrooms</h3><small>Available on all floors</small></div>
+          <div class="service"><h3>Parking</h3><small>Ground floor & basement</small></div>
+          <div class="service"><h3>Information</h3><small>Customer service desk</small></div>
+          <div class="service"><h3>Free WiFi</h3><small>OrionMall_Guest</small></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="map-area">
+      <div class="top-controls">
+        <input type="text" placeholder="Search stores, washrooms, food court..." class="map-search" id="mapSearch">
+        <select>
+               <option value="Level 0">Ground Floor</option>
+                <option value="Level 1">Level 1</option>
+            <option value="Level 2" >Level 2</option>
+            <option value="Level 3">Level 3</option>
+</select>
+        <button>3D View</button>
+        <button>2D Map</button>
+      </div>
+
+      <div class="grid-map" id="gridMap">
+        <!-- Markers will be rendered dynamically -->
+      </div>
+
+      <div class="legend" style="background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.08); padding:18px; font-size:16px; width:fit-content;">
+        <strong style="font-size:18px; color:#222; margin-bottom:10px; display:block;">Categories</strong>
+        <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:center;">
+          <span style="display:flex; align-items:center; gap:8px;"><span class="dot blue" style="background:#3498db; width:18px; height:18px;"></span> <span style="color:#222; font-weight:500;">Electronics</span></span>
+          <span style="display:flex; align-items:center; gap:8px;"><span class="dot red" style="background:#e74c3c; width:18px; height:18px;"></span> <span style="color:#222; font-weight:500;">Clothing</span></span>
+          <span style="display:flex; align-items:center; gap:8px;"><span class="dot green" style="background:#2ecc71; width:18px; height:18px;"></span> <span style="color:#222; font-weight:500;">Food</span></span>
+          <span style="display:flex; align-items:center; gap:8px;"><span class="dot orange" style="background:#f39c12; width:18px; height:18px;"></span> <span style="color:#222; font-weight:500;">Books</span></span>
+          <span style="display:flex; align-items:center; gap:8px;"><span class="dot purple" style="background:#8e44ad; width:18px; height:18px;"></span> <span style="color:#222; font-weight:500;">Jewelry</span></span>
+          <span style="display:flex; align-items:center; gap:8px;"><span class="dot cyan" style="background:#00bcd4; width:18px; height:18px;"></span> <span style="color:#222; font-weight:500;">Sports</span></span>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+  // Simple AI chat logic
+  function aiMallAssistantReply(query) {
+    query = query.toLowerCase();
+    if (query.includes('restroom')) {
+      return "Restrooms are available on all floors. For example, on Level 2, you'll find one at the center near Starbucks.";
+    }
+    if (query.includes('food court')) {
+      return "The Food Court is located on the Ground Floor (Level 0), near H&M.";
+    }
+    if (query.includes('parking')) {
+      return "Parking is available on the Ground Floor and basement levels. Follow signs for 'Parking' at the mall entrance.";
+    }
+    // Store search
+    const storeNames = [].concat(...Object.values(storeData)).map(s => s.name.toLowerCase());
+    for (const name of storeNames) {
+      if (query.includes(name)) {
+        return You can find ${name.charAt(0).toUpperCase()+name.slice(1)} on its respective floor. Use the search to see its location on the map.;
+      }
+    }
+    // Product search (simple demo)
+    if (query.includes('fashion')) {
+      return "Fashion stores include Zara, H&M, and more. Use the search to see their locations.";
+    }
+    if (query.includes('electronics')) {
+      return "The Apple Store on Level 1 offers electronics. Use the search to see its location.";
+    }
+    return "Sorry, I couldn't find an answer. Please try asking about a store, restroom, food court, or parking.";
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const chatForm = document.getElementById('aiChatForm');
+    const chatInput = document.getElementById('aiChatInput');
+    const chatMessages = document.getElementById('aiChatMessages');
+    const quickBtns = document.querySelectorAll('.aiQuickBtn');
+    function addMessage(text, isUser) {
+      const msg = document.createElement('div');
+      msg.style.background = isUser ? '#eaf3ff' : '#fff';
+      msg.style.borderRadius = '10px';
+      msg.style.padding = '12px 16px';
+      msg.style.marginBottom = '6px';
+      msg.style.color = '#222';
+      msg.style.fontSize = '16px';
+      msg.textContent = text;
+      chatMessages.appendChild(msg);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    chatForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const userText = chatInput.value.trim();
+      if (!userText) return;
+      addMessage(userText, true);
+      setTimeout(() => {
+        addMessage(aiMallAssistantReply(userText), false);
+      }, 400);
+      chatInput.value = '';
+    });
+    quickBtns.forEach(btn => {
+      btn.addEventListener('click', function() {
+        addMessage(btn.textContent, true);
+        setTimeout(() => {
+          addMessage(aiMallAssistantReply(btn.textContent), false);
+        }, 400);
+      });
+    });
+  });
+    function showTab(tabId) {
+      const tabs = document.querySelectorAll('.tab-content');
+      const buttons = document.querySelectorAll('nav.tabs button');
+      tabs.forEach(tab => tab.classList.remove('active'));
+      buttons.forEach(btn => btn.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
+  <script>
+  const storeData = {
+    "Level 0": [
+      { name: "H&M", category: "Fashion", level: "Level 0", top: "30%", left: "60%", color: "red" },
+      { name: "Food Court", category: "Food", level: "Level 0", top: "50%", left: "40%", color: "green" },
+      { name: "Restroom - North Wing", category: "Facilities", level: "Level 0", top: "20%", left: "70%", color: "green" },
+      { name: "Restroom - South Wing", category: "Facilities", level: "Level 0", top: "60%", left: "30%", color: "green" },
+    ],
+    "Level 1": [
+      { name: "Apple Store", category: "Electronics", level: "Level 1", top: "20%", left: "70%", color: "black" },
+      { name: "Nike", category: "Sports", level: "Level 1", top: "60%", left: "20%", color: "black" },
+      { name: "GameStop", category: "Entertainment", level: "Level 1", top: "40%", left: "50%", color: "purple" },
+      { name: "Restroom - Level 1 West", category: "Facilities", level: "Level 1", top: "65%", left: "50%", color: "green" },
+    ],
+    "Level 2": [
+      { name: "Zara", category: "Fashion", level: "Level 2", top: "20%", left: "70%", color: "red" },
+      { name: "Starbucks", category: "Food", level: "Level 2", top: "60%", left: "20%", color: "green" },
+      { name: "Sephora", category: "Beauty", level: "Level 2", top: "65%", left: "50%", color: "black" },
+      { name: "Restroom - Level 2 Center", category: "Facilities", level: "Level 2", top: "60%", left: "50%", color: "blue", label: "You" },
+    ],
+    "Level 4": []
+  };
+
+  function renderMarkers(floor, searchTerm = "") {
+    const gridMap = document.getElementById("gridMap");
+    gridMap.innerHTML = "";  // Clear existing markers
+
+    const markers = storeData[floor] || [];
+    // Filter markers by search term (for stores and facilities)
+    const filteredMarkers = markers.filter(store => {
+      if (!searchTerm) return true;
+      return store.name.toLowerCase().includes(searchTerm.toLowerCase()) || store.category.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+    if (filteredMarkers.length === 0) {
+      const msg = document.createElement("div");
+      msg.textContent = "No stores found.";
+      msg.style.padding = "20px";
+      msg.style.color = "#999";
+      gridMap.appendChild(msg);
+      return;
+    }
+    filteredMarkers.forEach(store => {
+      const div = document.createElement("div");
+      div.className = marker ${store.color};
+      div.style.top = store.top;
+      div.style.left = store.left;
+      div.innerHTML = ${store.name}<br>${store.level} + (store.label ? <br><strong>${store.label}</strong> : "");
+      gridMap.appendChild(div);
+    });
+  }
+
+  function renderStoreList(floor, searchTerm = "") {
+    const storeList = document.getElementById("stores");
+    storeList.innerHTML = "";
+    const stores = storeData[floor] || [];
+    // Filter stores by search term
+    const filteredStores = stores.filter(store => {
+      if (["Facilities", "Restroom", "Parking", "Information", "Free WiFi"].includes(store.category)) return false;
+      if (!searchTerm) return true;
+      return store.name.toLowerCase().includes(searchTerm.toLowerCase()) || store.category.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+    // Show popup if searching and only one result
+    const popup = document.getElementById("searchPopup");
+    if (searchTerm && filteredStores.length === 1) {
+      const store = filteredStores[0];
+      popup.style.display = "block";
+      popup.innerHTML = `
+        <div style="background:#fff; border-radius:16px; box-shadow:0 2px 16px rgba(0,0,0,0.12); padding:24px; font-family:Segoe UI, Tahoma, sans-serif;">
+          <div style="font-size:15px; color:#888; margin-bottom:8px;">1 result found</div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="font-size:22px; font-weight:600;">${store.name}</div>
+            <span style="background:#fdeaea; color:#d32f2f; font-weight:600; border-radius:12px; padding:2px 12px; font-size:15px;">${store.category}</span>
+          </div>
+          <div style="margin:10px 0 6px; display:flex; align-items:center; gap:16px; font-size:15px; color:#555;">
+            <span style="display:flex; align-items:center; gap:4px;"><span style="font-size:16px;">📍</span>Level ${store.level.replace('Level ', '')}</span>
+            <span style="display:flex; align-items:center; gap:4px;"><span style="color:#fbc02d; font-size:16px;">★</span>4.5</span>
+            <span style="display:flex; align-items:center; gap:4px;"><span style="font-size:16px;">⏰</span>10:00 AM - 9:00 PM</span>
+          </div>
+          <div style="color:#666; font-size:15px; margin-bottom:12px;">Discover the latest fashion trends for men, women…</div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <button id="directionsBtn" style="background:#1976d2; border:none; border-radius:8px; padding:8px 20px; font-weight:600; color:#fff; cursor:pointer; font-size:16px; display:flex; align-items:center; gap:8px;">
+              <span style="font-size:18px;">✈</span> Directions
+            </button>
+          </div>
+        </div>
+      `;
+      setTimeout(() => {
+        const btn = document.getElementById("directionsBtn");
+        if (btn) {
+          btn.onclick = function() {
+            showNavigationPopup(store);
+          };
+        }
+      }, 100);
+    } else {
+      popup.style.display = "none";
+      if (filteredStores.length === 0) {
+        const msg = document.createElement("div");
+        msg.textContent = "No stores found.";
+        msg.style.padding = "20px";
+        msg.style.color = "#999";
+        storeList.appendChild(msg);
+        return;
+      }
+      filteredStores.forEach(store => {
+        const div = document.createElement("div");
+        div.className = "store";
+        div.innerHTML = `
+          <div class="color-box ${store.color}"></div>
+          <div>
+            <strong>${store.name}</strong><br>
+            <small>${store.category}</small><br>
+            <span class="badge">${store.level}</span>
+            <small>90m away</small>
+          </div>
+        `;
+        div.onclick = function() {
+          showStoreModal(store);
+        };
+        storeList.appendChild(div);
+      });
+    }
+  }
+
+  // Modal logic
+  function showStoreModal(store) {
+    const modal = document.getElementById("storeModal");
+    const content = document.getElementById("storeModalContent");
+    // Demo images and products
+    let storeImg = "https://i.pinimg.com/736x/12/1d/ff/121dff56ab2e10a825d2593a1f28b7b0.jpg";
+    let products = [];
+    let phone = "+1 (555) 123-4567";
+      let about = "Experience the latest Apple products and get hands-on support from our team of specialists.";
+    if (store.name === "Apple Store") {
+      storeImg = "https://tse1.mm.bing.net/th/id/OIP.IVx5GU5Mhf3JnPdeNMlUnQHaEK?pid=Api&P=0&h=180";
+      products = [
+        { name: "iPhone 15", price: "From $799", img: "https://iplanet.one/cdn/shop/files/iPhone_15_Pink_PDP_Image_Position-1__en-IN_e784559e-7a8a-451a-8949-354ca2b18e62.jpg?v=1695428218&width=1920" },
+        { name: "MacBook Air", price: "From $999", img: "https://akm-img-a-in.tosshub.com/indiatoday/images/story/202410/macbook-air-m1-070713187-16x9.jpg?VersionId=2Gysv6IKGF.qOj4QBJ0pgytRz43.abCt" },
+        { name: "AirPods Pro", price: "$249", img: "https://i.ytimg.com/vi/ql6mhhHCldY/maxresdefault.jpg" }
+      ];
+    } else if (store.name === "Nike") {
+      storeImg = "https://static.nike.com/a/images/f_auto/f1e600d8-c933-4a30-bde3-4bdf2117c588/image.jpeg";
+      products = [
+        { name: "Air Max 270", price: "$150", img: "https://tse1.mm.bing.net/th/id/OIP._LQHF9t7jG0-Lz3LcMPCEgHaJQ?pid=Api&P=0&h=180" },
+        { name: "Nike Dri-FIT", price: "$35", img: "https://static.nike.com/a/videos/so_0.5/8d9920f5-1e17-4857-92d5-5a1a54ccec97/dri-fit-fitness-t-shirt-PDvL9m.jpg" }
+      ];
+      phone = "+1 (555) 987-6543";
+      about = "Shop the latest Nike shoes and apparel. Performance and style for every athlete.";
+    } else if (store.name === "Zara") {
+      storeImg = "https://www.rappler.com/tachyon/2023/02/2023-02-01T175905Z_1573938170_RC265Y9UD02W_RTRMADP_3_INDITEX-SPAIN-RETURNS-scaled.jpg";
+      products = [
+        { name: "Men's Blazer", price: "$120", img: "https://cdn.mos.cms.futurecdn.net/iE9fLRXciRutdznTwexViS.jpg" },
+        { name: "Women's Dress", price: "$89", img: "https://i.ytimg.com/vi/TCedWdeLw1c/maxresdefault.jpg" }
+      ];
+      phone = "+1 (555) 222-3344";
+      about = "Discover the latest fashion trends for men, women, and kids at Zara.";
+    } else {
+      products = [
+        { name: "Featured Product", price: "$99", img: "https://cdn.prod.website-files.com/659415b46df8ea43c3877776/67d49f3d8922c5f1f1c33801_featured-products-blog-post-cover-image.jpg" }
+      ];
+      about = "Visit our store for exclusive deals and products.";
+    }
+    content.innerHTML = `
+      <button id="closeStoreModal" style="position:absolute; top:18px; right:18px; background:none; border:none; font-size:22px; color:#888; cursor:pointer;">&times;</button>
+      <img src="${storeImg}" alt="${store.name}" style="width:100%; max-height:140px; object-fit:cover; border-radius:12px 12px 0 0; margin-bottom:18px;">
+      <div style="display:flex; align-items:center; gap:18px; margin-bottom:8px;">
+        <div style="width:48px; height:48px; background:${store.color}; border-radius:12px;"></div>
+        <div>
+          <div style="font-size:22px; font-weight:700;">${store.name}</div>
+          <div style="font-size:16px; color:#555;">${store.category}</div>
+        </div>
+      </div>
+      <div style="margin:8px 0 10px; display:flex; align-items:center; gap:18px; font-size:15px; color:#555;">
+        <span style="display:flex; align-items:center; gap:4px;"><span style="font-size:16px;">📍</span><strong>${store.level}</strong></span>
+        <span style="display:flex; align-items:center; gap:4px;"><span style="color:#fbc02d; font-size:16px;">★</span>4.8</span>
+        <span style="display:flex; align-items:center; gap:4px;"><span style="font-size:16px;">⏰</span>10:00 AM - 10:00 PM</span>
+      </div>
+      <div style="display:flex; gap:12px; margin-bottom:18px;">
+        <button id="modalDirectionsBtn" style="background:#1976d2; border:none; border-radius:8px; padding:10px 24px; font-weight:600; color:#fff; cursor:pointer; font-size:17px; display:flex; align-items:center; gap:8px; flex:1; border:2px solid #1976d2;">Navigate There</button>
+        <button id="callStoreBtn" style="background:#fff; border:2px solid #ddd; border-radius:8px; padding:10px 24px; font-weight:600; color:#222; cursor:pointer; font-size:17px; flex:1;">Call Store</button>
+      </div>
+      <div style="font-size:17px; font-weight:600; margin-bottom:8px;">Popular Products</div>
+      <div style="display:flex; gap:18px; margin-bottom:18px; flex-wrap:wrap;">
+        ${products.map(p => `
+          <div style="background:#f7f7f7; border-radius:10px; padding:10px 12px; text-align:center; min-width:110px; max-width:140px; flex:1;">
+            <img src="${p.img}" alt="${p.name}" style="width:70px; height:70px; object-fit:contain; border-radius:8px; margin-bottom:8px;">
+            <div style="font-size:15px; font-weight:500; color:#222; margin-bottom:2px;">${p.name}</div>
+            <div style="font-size:14px; color:#888;">${p.price}</div>
+          </div>
+        `).join("")}
+      </div>
+      <div style="font-size:17px; font-weight:600; margin-bottom:6px;">About This Store</div>
+      <div style="color:#555; font-size:15px; margin-bottom:10px;">${about}</div>
+      <div style="display:flex; justify-content:space-between; align-items:center; background:#f7f7f7; border-radius:8px; padding:8px 14px; font-size:15px; color:#555;">
+        <span>Distance from your location: <strong>95m</strong></span>
+        <span>Phone: <strong>${phone}</strong></span>
+      </div>
+    `;
+    modal.style.display = "flex";
+    setTimeout(() => {
+      document.getElementById("closeStoreModal").onclick = function() {
+        modal.style.display = "none";
+      };
+      document.getElementById("modalDirectionsBtn").onclick = function() {
+        modal.style.display = "none";
+        showNavigationPopup(store);
+      };
+        document.getElementById("callStoreBtn").onclick = function() {
+          const phoneNumber = '7026096292';
+          // Simple mobile detection
+          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+          if (isMobile) {
+            window.open('tel:' + phoneNumber);
+          } else {
+            // Desktop: show popup and copy to clipboard
+            alert('Call this number: ' + phoneNumber + '\nIt has been copied to your clipboard.');
+            if (navigator.clipboard) {
+              navigator.clipboard.writeText(phoneNumber);
+            }
+          }
+        };
+    }, 100);
+  }
+
+  function showNavigationPopup(store) {
+    const navPopup = document.getElementById("navigationPopup");
+    const navContent = document.getElementById("navigationPopupContent");
+    // Find all stores for source selection
+    const allStores = [].concat(...Object.values(storeData));
+    navContent.innerHTML = `
+      <button id="closeNavigationPopup" style="position:absolute; top:14px; right:14px; background:none; border:none; font-size:22px; color:#1976d2; cursor:pointer;">&times;</button>
+      <div style="font-size:22px; font-weight:700; margin-bottom:8px; color:#1976d2;">Mall Navigation</div>
+      <div style="margin-bottom:14px;">
+        <label style="font-size:15px; font-weight:600;">Source:</label>
+        <input id="sourceInput" type="text" placeholder="Enter source (e.g. Starbucks)" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; margin-bottom:8px; font-size:15px;">
+        <label style="font-size:15px; font-weight:600;">Destination:</label>
+        <input id="destinationInput" type="text" value="${store.name}" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; margin-bottom:8px; font-size:15px;">
+      </div>
+      <div id="routeInfo" style="margin-bottom:14px; font-size:15px; color:#555;">Select source and destination to see route.</div>
+      <button id="startNavigationBtn" style="background:#1976d2; border:none; border-radius:8px; padding:10px 24px; font-weight:600; color:#fff; cursor:pointer; font-size:17px; display:flex; align-items:center; gap:8px;">
+        <span style="font-size:20px;">🧭</span> Start Navigation
+      </button>
+    `;
+    navPopup.style.display = "flex";
+    setTimeout(() => {
+      document.getElementById("closeNavigationPopup").onclick = function() {
+        navPopup.style.display = "none";
+      };
+      // Autocomplete for source/destination
+      const sourceInput = document.getElementById("sourceInput");
+      const destinationInput = document.getElementById("destinationInput");
+      function autocomplete(input) {
+        input.addEventListener("input", function() {
+          const val = this.value.toLowerCase();
+          const match = allStores.find(s => s.name.toLowerCase().includes(val));
+          if (match) this.value = match.name;
+        });
+      }
+      autocomplete(sourceInput);
+      autocomplete(destinationInput);
+      document.getElementById("startNavigationBtn").onclick = function() {
+        navPopup.style.display = "none";
+        const gridMap = document.getElementById("gridMap");
+        const markers = Array.from(gridMap.getElementsByClassName("marker"));
+        markers.forEach(m => m.style.boxShadow = "none");
+        // Find source and destination markers
+        const sourceName = sourceInput.value.trim();
+        const destName = destinationInput.value.trim();
+        const sourceMarker = markers.find(m => m.textContent.includes(sourceName));
+        const destMarker = markers.find(m => m.textContent.includes(destName));
+        if (sourceMarker) {
+          sourceMarker.style.boxShadow = "0 0 0 6px #43a047, 0 2px 12px rgba(67,160,71,0.18)";
+          sourceMarker.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+        }
+        if (destMarker) {
+          destMarker.style.boxShadow = "0 0 0 6px #1976d2, 0 2px 12px rgba(30,144,255,0.18)";
+          destMarker.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+        }
+        // Draw route line (simple demo)
+        drawRouteLine(sourceMarker, destMarker);
+      };
+      // Show route info when both fields are filled
+      function updateRouteInfo() {
+        const sourceName = sourceInput.value.trim();
+        const destName = destinationInput.value.trim();
+        if (sourceName && destName && sourceName !== destName) {
+          document.getElementById("routeInfo").textContent = Route from ${sourceName} to ${destName}. Estimated time: 2 min. Distance: 90m.;
+        } else {
+          document.getElementById("routeInfo").textContent = "Select source and destination to see route.";
+        }
+      }
+      sourceInput.addEventListener("input", updateRouteInfo);
+      destinationInput.addEventListener("input", updateRouteInfo);
+      updateRouteInfo();
+    }, 100);
+  }
+
+  // Draw a simple route line between two markers
+  function drawRouteLine(sourceMarker, destMarker) {
+    // Remove previous route line
+    const oldLine = document.getElementById("routeLine");
+    if (oldLine) oldLine.remove();
+    if (!sourceMarker || !destMarker) return;
+    const gridMap = document.getElementById("gridMap");
+    // Get positions
+    const rect = gridMap.getBoundingClientRect();
+    const srcRect = sourceMarker.getBoundingClientRect();
+    const dstRect = destMarker.getBoundingClientRect();
+    const x1 = srcRect.left + srcRect.width/2 - rect.left;
+    const y1 = srcRect.top + srcRect.height/2 - rect.top;
+    const x2 = dstRect.left + dstRect.width/2 - rect.left;
+    const y2 = dstRect.top + dstRect.height/2 - rect.top;
+    // Create SVG line
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("id", "routeLine");
+    svg.style.position = "absolute";
+    svg.style.left = "0";
+    svg.style.top = "0";
+    svg.style.width = "100%";
+    svg.style.height = "100%";
+    svg.style.pointerEvents = "none";
+    svg.innerHTML = `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#1976d2" stroke-width="5" stroke-dasharray="12 8" marker-end="url(#arrowhead)" />
+      <defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#1976d2"/></marker></defs>`;
+    gridMap.appendChild(svg);
+  }
+
+  // Call renderMarkers and store list initially (default floor)
+  let currentFloor = "Level 2";
+  let currentSearchTerm = "";
+  renderMarkers(currentFloor);
+  renderStoreList(currentFloor);
+
+  // Hook to dropdown
+  const floorDropdown = document.querySelector(".top-controls select");
+  floorDropdown.addEventListener("change", () => {
+    currentFloor = floorDropdown.value;
+    renderMarkers(currentFloor, currentSearchTerm);
+    renderStoreList(currentFloor, currentSearchTerm);
+  });
+
+  // Sidebar search
+  document.getElementById("sidebarSearch").addEventListener("input", function() {
+    currentSearchTerm = this.value;
+    renderStoreList(currentFloor, currentSearchTerm);
+  });
+
+  // Map search
+  document.getElementById("mapSearch").addEventListener("input", function() {
+    currentSearchTerm = this.value;
+    renderMarkers(currentFloor, currentSearchTerm);
+  });
+
+  // Optional: sync dropdown value on load
+  floorDropdown.value = "Level 2";
+  </script>
+</body>
+</html>

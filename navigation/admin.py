@@ -19,3 +19,4 @@ class NavigationEdgeAdmin(admin.ModelAdmin):
         'end_node__name',
     )
     autocomplete_fields = ('start_node', 'end_node')
+    
